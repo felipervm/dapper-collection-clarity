@@ -1,0 +1,1 @@
+Executive refinement: 1440px desktop and 390px mobile passed. All four response states, accordion, snapshot selection, images, audit, no page overflow or JS errors, reduced motion, normal-motion section reveal. Standalone HTML embedded assets and data passed over in-process HTTP.

@@ -1,0 +1,18 @@
+Patch applied cleanly to upstream HEAD; whitespace check passed.
+✔ network failure orders by holdings and keeps unknown scores null (3.7814ms)
+✔ verified zero differs from holder absent from capped leaderboard (0.5879ms)
+✔ empty response cannot become an authoritative score ranking (0.3372ms)
+✔ malformed response cannot become an authoritative score ranking (0.3499ms)
+✔ invalid response cannot become an authoritative score ranking (0.3128ms)
+✔ duplicate response cannot become an authoritative score ranking (0.2904ms)
+✔ unmatched response cannot become an authoritative score ranking (0.2464ms)
+✔ missing update time is not replaced with load time (0.3404ms)
+✔ negative, strings and null are not scores; real zero is a score (0.3399ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1708.3524

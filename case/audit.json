@@ -1,0 +1,54 @@
+{
+  "auditedAt": "2026-10-08T13:20:17.969988+00:00",
+  "scope": "Three upstream repository samples only; no live API or independent on-chain reconciliation.",
+  "samples": [
+    {
+      "player": "Karl-Anthony Towns",
+      "file": "data\\sample\\1626157.json",
+      "sha256": "47d380c6224e32e38c38e44accafc64115f6b9db5094e05e61e03a0ee469de58",
+      "declaredPartial": false,
+      "reportedMintedSupply": 275880,
+      "editions": 54,
+      "owners": 7830,
+      "observedSerials": 16970,
+      "serialsWithoutOwner": 0,
+      "duplicateSerialIds": 0,
+      "duplicateOwnerAddresses": 0,
+      "ownerCountMismatches": 5903,
+      "snapshotUpdateTime": null,
+      "notes": "Supply, sampled serials and holder counts are different quantities. partial is a source flag, not proof of an error."
+    },
+    {
+      "player": "Stephen Curry",
+      "file": "data\\sample\\201939.json",
+      "sha256": "1bf1dbc77d501b40e810e6528e5a0692630101faee424c588c657bb63f90c657",
+      "declaredPartial": true,
+      "reportedMintedSupply": 305622,
+      "editions": 63,
+      "owners": 11647,
+      "observedSerials": 29938,
+      "serialsWithoutOwner": 2784,
+      "duplicateSerialIds": 0,
+      "duplicateOwnerAddresses": 0,
+      "ownerCountMismatches": 0,
+      "snapshotUpdateTime": null,
+      "notes": "Supply, sampled serials and holder counts are different quantities. partial is a source flag, not proof of an error."
+    },
+    {
+      "player": "LeBron James",
+      "file": "data\\sample\\2544.json",
+      "sha256": "dec8e8568e3923ad680bfbfd829a68e66827d2f2ad3c15a088a79f3d0b862d4d",
+      "declaredPartial": true,
+      "reportedMintedSupply": 288890,
+      "editions": 68,
+      "owners": 9960,
+      "observedSerials": 30881,
+      "serialsWithoutOwner": 3591,
+      "duplicateSerialIds": 0,
+      "duplicateOwnerAddresses": 0,
+      "ownerCountMismatches": 0,
+      "snapshotUpdateTime": null,
+      "notes": "Supply, sampled serials and holder counts are different quantities. partial is a source flag, not proof of an error."
+    }
+  ]
+}

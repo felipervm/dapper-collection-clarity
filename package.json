@@ -1,0 +1,12 @@
+{
+  "name": "fandom-graph",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "smoke": "node scripts/smoke.mjs",
+    "privacy-smoke": "node scripts/privacy-smoke.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  }
+}

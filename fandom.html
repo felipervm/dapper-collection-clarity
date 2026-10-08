@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Top Shot · Fandom Graph · Independent demo</title>
+<meta name="description" content="Fly through the universe of any NBA player's Top Shot Moments. See every collector, every serial, every connection." />
+<meta property="og:title" content="Top Shot · Fandom Graph" />
+<meta property="og:description" content="Every Moment is real. Every collector is real. Every connection is on-chain. Pick a player and explore." />
+<meta property="og:image" content="https://fandom-v3.vercel.app/og-default.png" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://fandom-v3.vercel.app/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Top Shot · Fandom Graph" />
+<meta name="twitter:description" content="Every Moment is real. Every collector is real. Every connection is on-chain." />
+<meta name="twitter:image" content="https://fandom-v3.vercel.app/og-default.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23ff2d4e'/%3E%3Ctext x='16' y='22' font-family='Arial Black' font-size='18' font-weight='900' text-anchor='middle' fill='white'%3ETS%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css?v=20260628m7" />
+<style>
+  body { overflow-x: hidden; }
+
+  /* Picker is the lander. No hero, no marketing copy. */
+  .player-picker { max-width: 1100px; margin: 0 auto; padding: 60px 28px 36px; }
+  .picker-hdr { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .picker-hdr h2 { font-family: var(--hdr); font-weight: 900; font-size: clamp(40px, 6vw, 72px); text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.95; margin: 0; color: var(--fg); }
+  .picker-hdr .sub { font-size: 13px; color: var(--fg-muted); font-family: var(--mono); }
+
+  /* Hide picker when a player is loaded (body class toggled by fandom.js) */
+  body.viewing-player .player-picker { display: none; }
+  body.viewing-player .graph-area { height: calc(100vh - 64px); }
+  body:not(.viewing-player) .graph-area { display: none; }
+
+  /* Back-to-players nav — always visible inside graph-area when a player is loaded */
+  .back-to-picker { position: absolute; top: 18px; left: 18px; z-index: 20; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: rgba(0,0,0,0.78); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; color: #f0f2fd; font-family: var(--body); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 18px rgba(0,0,0,0.45); }
+  .back-to-picker:hover { border-color: var(--accent-teal); color: var(--accent-teal); transform: translateX(-2px); }
+  .back-to-picker .arrow { font-size: 16px; line-height: 1; }
+  /* When the legend is visible, push it down so the back button stays clear */
+  body.viewing-player .graph-legend { top: 70px; }
+  /* .player-card styles removed — picker now uses .player-result (spec-004) */
+
+  .graph-area { position: relative; width: 100%; height: min(78vh, 820px); background: radial-gradient(ellipse at center, rgba(20,20,40,0.8) 0%, #05060c 80%); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); overflow: hidden; }
+  .graph-area::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.6) 100%), repeating-linear-gradient(0deg, transparent 0 44px, rgba(20,216,196,0.03) 44px 45px), repeating-linear-gradient(90deg, transparent 0 44px, rgba(20,216,196,0.03) 44px 45px); pointer-events: none; z-index: 1; }
+  .graph-area::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at top, rgba(255,45,78,0.08) 0%, transparent 50%), radial-gradient(ellipse at bottom, rgba(52,81,255,0.08) 0%, transparent 50%); pointer-events: none; z-index: 1; }
+  #graph { position: absolute; inset: 0; z-index: 2; }
+  .graph-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); font-size: 15px; text-transform: uppercase; letter-spacing: 0.2em; z-index: 3; pointer-events: none; }
+  .graph-legend { position: absolute; top: 18px; left: 18px; z-index: 5; padding: 14px 18px; background: rgba(0,0,0,0.6); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 10px; font-size: 11px; }
+  .graph-legend .row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .graph-legend .row:last-child { margin-bottom: 0; }
+  .graph-legend .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .graph-legend .label { color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px; font-weight: 700; }
+  .graph-legend .val { color: var(--fg); }
+
+  .graph-meta { position: absolute; top: 18px; right: 18px; z-index: 5; padding: 14px 18px; background: rgba(0,0,0,0.6); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 10px; font-size: 12px; text-align: right; min-width: 200px; }
+  .graph-meta .player-name { font-family: var(--hdr); font-weight: 900; font-size: 22px; text-transform: uppercase; letter-spacing: -0.005em; line-height: 1; margin-bottom: 6px; }
+  .graph-meta .row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 6px 0; border-top: 1px solid var(--border); font-size: 11px; }
+  .graph-meta .row:first-of-type { border-top: none; padding-top: 2px; }
+  .graph-meta .k { color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px; font-weight: 700; }
+  .graph-meta .v { color: var(--fg); font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+  .graph-controls { position: absolute; bottom: 18px; left: 18px; z-index: 5; display: flex; gap: 8px; }
+  .graph-controls button { padding: 8px 14px; background: rgba(0,0,0,0.6); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 6px; color: var(--fg); font-family: var(--body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer; transition: all 0.15s ease; }
+  .graph-controls button:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+
+  .graph-hint { position: absolute; bottom: 18px; right: 18px; z-index: 5; padding: 8px 14px; background: rgba(0,0,0,0.5); backdrop-filter: blur(14px); border: 1px solid var(--border); border-radius: 6px; font-size: 11px; color: var(--fg-muted); }
+
+  /* Drawer */
+  .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 92vw); background: linear-gradient(180deg, #0a0a14 0%, #05060c 100%); border-left: 1px solid var(--border-strong); transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 100; overflow-y: auto; box-shadow: -20px 0 60px rgba(0,0,0,0.5); }
+  .drawer.open { transform: translateX(0); }
+  .drawer-inner { padding: 28px 26px 40px; }
+  .drawer-close { position: absolute; top: 18px; right: 18px; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.04); border: 1px solid var(--border); color: var(--fg); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .drawer-close:hover { border-color: var(--fg); }
+  .drawer .eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.2em; color: var(--fg-dim); margin-bottom: 8px; }
+  .drawer h3 { font-family: var(--hdr); font-weight: 900; font-size: 28px; text-transform: uppercase; letter-spacing: -0.01em; line-height: 1.0; margin: 0 0 6px; }
+  .drawer .sub { font-size: 13px; color: var(--fg-muted); margin-bottom: 18px; }
+  .drawer .rar-row { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--fg-muted); margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .drawer .rar-row span strong { color: var(--fg); font-family: var(--mono); }
+  .drawer-section { margin-top: 22px; }
+  .drawer-section h4 { font-family: var(--hdr); font-weight: 800; font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--fg-muted); margin: 0 0 10px; }
+  .serial-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 4px; }
+  .serial-strip a { padding: 8px 4px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 4px; font-family: var(--mono); font-size: 11px; color: var(--fg-muted); text-align: center; text-decoration: none; transition: all 0.1s ease; }
+  .serial-strip a:hover { border-color: var(--accent-teal); color: var(--accent-teal); }
+  .owner-list { display: flex; flex-direction: column; gap: 6px; }
+  .owner-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; font-family: var(--mono); font-size: 12px; cursor: pointer; transition: border-color 0.1s ease; text-decoration: none; color: inherit; }
+  .owner-row:hover { border-color: var(--accent-teal); }
+  .owner-row .addr { color: var(--fg); }
+  .owner-row .addr .tier-b { display: inline-block; margin-left: 8px; padding: 2px 6px; background: rgba(245,184,64,0.12); border: 1px solid rgba(245,184,64,0.3); border-radius: 3px; color: var(--rarity-anthology); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-family: var(--body); }
+  .owner-row .count { color: var(--fg-muted); }
+  .holdings-list { display: flex; flex-direction: column; gap: 6px; }
+  .holding-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; text-decoration: none; color: inherit; }
+  .holding-row:hover { border-color: var(--accent-teal); }
+  .holding-row .play { font-weight: 500; }
+  .holding-row .serial { font-family: var(--mono); color: var(--accent-teal); }
+  .open-cert { display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; margin-top: 14px; background: var(--accent-blue); color: #fff; border: none; border-radius: 4px; font-family: var(--body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer; text-decoration: none; }
+  .open-cert:hover { background: var(--accent-blue-bright); }
+
+  /* Player loading / error overlay — pizzazz edition */
+  .player-loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; z-index: 6; background: radial-gradient(ellipse at center, rgba(10,10,25,0.92) 0%, rgba(5,6,12,0.96) 100%); backdrop-filter: blur(8px); text-align: center; padding: 24px; animation: loading-fade-in 0.4s ease; }
+  @keyframes loading-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .player-loading .spinner { display: none !important; }
+  .loading-scene { position: relative; width: 200px; height: 200px; display: flex; align-items: center; justify-content: center; }
+  .loading-ball { font-size: 64px; animation: ball-bounce 1.2s cubic-bezier(0.35, 0, 0.25, 1) infinite; filter: drop-shadow(0 4px 20px rgba(255, 107, 0, 0.4)); z-index: 2; }
+  .loading-ball-trail, .loading-ball-trail-2 { position: absolute; font-size: 64px; opacity: 0.15; animation: ball-bounce 1.2s cubic-bezier(0.35, 0, 0.25, 1) infinite; z-index: 1; }
+  .loading-ball-trail { animation-delay: 0.1s; }
+  .loading-ball-trail-2 { animation-delay: 0.2s; opacity: 0.08; }
+  @keyframes ball-bounce {
+    0%, 100% { transform: translateY(0) scale(1) rotate(0deg); }
+    25% { transform: translateY(-60px) scale(0.9) rotate(180deg); }
+    50% { transform: translateY(-80px) scale(0.85) rotate(360deg); }
+    75% { transform: translateY(-30px) scale(0.95) rotate(540deg); }
+  }
+  .loading-orbit { position: absolute; width: 180px; height: 180px; animation: orbit-spin 8s linear infinite; }
+  @keyframes orbit-spin { to { transform: rotate(360deg); } }
+  .loading-orbit-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-teal, #14d8c4); box-shadow: 0 0 12px rgba(20, 216, 196, 0.6); top: 50%; left: 50%; transform: rotate(var(--angle)) translateX(90px) rotate(calc(var(--angle) * -1)); animation: dot-pulse 1.5s ease-in-out infinite; animation-delay: calc(var(--angle) / 60 * 0.25s); }
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 0.4; transform: rotate(var(--angle)) translateX(90px) rotate(calc(var(--angle) * -1)) scale(0.8); }
+    50% { opacity: 1; transform: rotate(var(--angle)) translateX(90px) rotate(calc(var(--angle) * -1)) scale(1.3); }
+  }
+  .loading-initials { position: absolute; font-family: var(--hdr); font-weight: 900; font-size: 48px; color: rgba(255, 255, 255, 0.06); text-transform: uppercase; letter-spacing: 0.05em; z-index: 0; pointer-events: none; animation: initials-glow 3s ease-in-out infinite; }
+  @keyframes initials-glow { 0%, 100% { opacity: 0.04; transform: scale(1); } 50% { opacity: 0.12; transform: scale(1.08); } }
+  .loading-text-area { text-align: center; min-height: 60px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .player-loading .msg { font-family: var(--body); font-size: 15px; font-weight: 600; color: #f0f2fd; text-transform: none; letter-spacing: 0; animation: msg-crossfade 0.5s ease; }
+  .player-loading .sub { font-size: 12px; color: rgba(240, 242, 253, 0.5); font-family: var(--mono); text-transform: none; letter-spacing: 0; }
+  @keyframes msg-crossfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .loading-progress-track { width: 240px; height: 3px; background: rgba(255, 255, 255, 0.08); border-radius: 2px; overflow: hidden; }
+  .loading-progress-fill { height: 100%; width: 5%; background: linear-gradient(90deg, var(--accent-gold, #f5b840), var(--accent-teal, #14d8c4)); border-radius: 2px; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 0 12px rgba(20, 216, 196, 0.4); }
+  .player-loading.error .loading-scene { display: none; }
+  .player-loading.error .loading-progress-track { display: none; }
+  .player-loading .retry-btn { margin-top: 8px; padding: 10px 18px; background: var(--accent-blue); color: #fff; border: none; border-radius: 4px; font-family: var(--body); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; cursor: pointer; }
+  .player-loading .retry-btn:hover { background: var(--accent-blue-bright); }
+  @media (max-width: 768px) {
+    .loading-scene { width: 160px; height: 160px; }
+    .loading-ball, .loading-ball-trail, .loading-ball-trail-2 { font-size: 48px; }
+    .loading-orbit { width: 140px; height: 140px; }
+    .loading-orbit-dot { transform: rotate(var(--angle)) translateX(70px) rotate(calc(var(--angle) * -1)); }
+    .loading-initials { font-size: 36px; }
+    .loading-progress-track { width: 200px; }
+  }
+
+  .fandom-footer-section { max-width: 1400px; margin: 0 auto; padding: 80px 28px; border-top: 1px solid var(--border); }
+  .fandom-footer-section h2 { font-family: var(--hdr); font-weight: 900; font-size: clamp(40px, 5.5vw, 72px); line-height: 0.95; text-transform: uppercase; letter-spacing: -0.01em; margin: 0 0 16px; }
+  .fandom-footer-section p { font-size: 16px; line-height: 1.6; color: var(--fg-muted); max-width: 64ch; margin: 0 0 16px; font-weight: 300; }
+</style>
+<!-- Plausible privacy-first analytics (spec-003 Task 8). data-exclude-search strips the
+     ?spotlight=<flowAddress> query string so wallet addresses never leave the browser in
+     the automatic pageview event. Custom deep-link events below send only the numeric
+     playerId + a boolean spotlight flag — never an address, dapperID, or username. -->
+<!-- Upstream analytics disabled in this independent demo. -->
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="logo">
+      <span class="logo-mark">TS</span>
+      <span>Top Shot</span>
+      <span class="beta">AUTH</span>
+    </a>
+    <div class="nav-links" style="display:flex;">
+      <a href="/" class="active">Fandom Graph</a>
+      <a href="/methodology" id="nav-methodology-link">How this works</a>
+    </div>
+    <a href="https://nbatopshot.com" target="_blank" rel="noopener" class="nav-cta">Open Top Shot</a>
+  </div>
+</nav>
+
+<section class="player-picker">
+  <div class="picker-hdr">
+    <h2>Pick a player</h2>
+    <div class="sub" id="picker-count">Loading…</div>
+  </div>
+  <p class="picker-lede" style="max-width: 64ch; margin: -8px 0 24px; font-size: 15px; line-height: 1.55; color: rgba(240,242,253,0.65); font-weight: 300;">
+    Every node is a real NBA Top Shot Moment. Every edge is a real wallet that owns one. Pick a player and explore the universe of every Moment they have, every serial ever minted, and every collector who owns a piece. <a href="/methodology" style="color: rgba(20,216,196,0.85); text-decoration: none; border-bottom: 1px solid rgba(20,216,196,0.3); padding-bottom: 1px;">How this works →</a>
+  </p>
+  <div class="team-chips" id="team-chips" role="toolbar" aria-label="Filter by team"></div>
+  <div class="player-search">
+    <input type="search" id="player-search-input" role="combobox" aria-expanded="false" aria-controls="player-results" aria-autocomplete="list" aria-activedescendant="" placeholder="Search 100 NBA players..." inputmode="search" style="font-size:16px" />
+  </div>
+  <div class="player-results" id="player-results" role="listbox" aria-label="Players"></div>
+  <div class="picker-error" id="picker-error" style="display:none;">
+    <p>Couldn't load the player catalog — try again.</p>
+    <button id="picker-retry" type="button">Try again</button>
+  </div>
+</section>
+
+<section class="graph-area">
+  <button id="back-to-picker" class="back-to-picker" aria-label="Back to player list">
+    <span class="arrow">←</span> All players
+  </button>
+  <nav class="level-breadcrumb" id="level-breadcrumb" aria-label="Level breadcrumb" style="display:none;"></nav>
+  <div class="level-subtitle" id="level-subtitle" style="display:none;"></div>
+  <div class="graph-empty" id="graph-empty">Select a player above to enter the graph</div>
+  <div class="player-loading" id="player-loading" style="display:none;">
+    <div class="loading-scene">
+      <div class="loading-ball">🏀</div>
+      <div class="loading-ball-trail">🏀</div>
+      <div class="loading-ball-trail-2">🏀</div>
+      <div class="loading-orbit">
+        <div class="loading-orbit-dot" style="--angle: 0deg"></div>
+        <div class="loading-orbit-dot" style="--angle: 60deg"></div>
+        <div class="loading-orbit-dot" style="--angle: 120deg"></div>
+        <div class="loading-orbit-dot" style="--angle: 180deg"></div>
+        <div class="loading-orbit-dot" style="--angle: 240deg"></div>
+        <div class="loading-orbit-dot" style="--angle: 300deg"></div>
+      </div>
+      <div class="loading-initials" id="loading-initials"></div>
+    </div>
+    <div class="loading-text-area">
+      <div class="msg" id="player-loading-msg">Loading universe…</div>
+      <div class="sub" id="player-loading-sub"></div>
+    </div>
+    <div class="loading-progress-track">
+      <div class="loading-progress-fill" id="loading-progress-fill"></div>
+    </div>
+    <button class="retry-btn" id="player-loading-retry" style="display:none;">Try again</button>
+  </div>
+  <div id="graph"></div>
+  <div class="graph-legend" id="graph-legend" style="display:none;">
+    <div class="row"><span class="dot" style="background: linear-gradient(135deg,#ff2d4e,#ff7a00); box-shadow: 0 0 14px rgba(255,45,78,0.6);"></span> <span class="label">Player</span></div>
+    <div class="row"><span class="dot" style="background: linear-gradient(135deg,#ff2d80,#ff7a00);"></span> <span class="label">Legendary Moment</span></div>
+    <div class="row"><span class="dot" style="background: #f5b840;"></span> <span class="label">Anthology</span></div>
+    <div class="row"><span class="dot" style="background: #3b82f6;"></span> <span class="label">Rare Moment</span></div>
+    <div class="row"><span class="dot" style="background: #8d8d96;"></span> <span class="label">Common Moment</span></div>
+    <div class="row"><span class="dot" style="background: #14d8c4; box-shadow: 0 0 10px rgba(20,216,196,0.6);"></span> <span class="label">Top collector</span></div>
+    <div class="row"><span class="dot" style="background: rgba(240,242,253,0.3);"></span> <span class="label">Regular collector</span></div>
+  </div>
+  <div class="graph-meta" id="graph-meta" style="display:none;">
+    <div class="player-name" id="gm-player">—</div>
+    <div class="row"><span class="k">Moments</span><span class="v" id="gm-moments">—</span></div>
+    <div class="row"><span class="k">Collectors</span><span class="v" id="gm-collectors">—</span></div>
+    <div class="row"><span class="k">Top 10</span><span class="v" id="gm-top10">—</span></div>
+    <div class="row"><span class="k">Editions</span><span class="v" id="gm-serials">—</span></div>
+  <div class="row"><span class="k">Returned score total</span><span class="v" id="gm-locked">—</span></div>
+  </div>
+  <div class="graph-controls" id="graph-controls" style="display:none;">
+    <button id="btn-reset">↻ Recenter</button>
+    <button id="btn-spin">◐ Auto-rotate</button>
+    <button id="btn-close">✕ Close</button>
+  </div>
+  <div class="graph-hint" id="graph-hint" style="display:none;">Drag: orbit · Right-drag: pan · Scroll: zoom · Arrows: nudge · Click: details · Dbl-click / Shift-click: fly there</div>
+  <div class="graph-coverage" id="graph-coverage" style="display:none;"></div>
+  <details id="number-context" class="number-context" hidden></details>
+  <button class="mobile-toggle-btn" id="mobile-legend-toggle" title="Toggle legend" onclick="var l=document.getElementById('graph-legend'); if(l) l.classList.toggle('mobile-visible');">☰</button>
+
+  <!-- Leaderboard sidebar -->
+  <aside class="leaderboard" id="leaderboard" style="display:none;">
+    <div class="lb-head">
+      <div class="lb-eyebrow">Locked</div>
+      <div class="lb-title">Locked Score Leaders</div>
+      <button class="lb-collapse" id="lb-collapse" title="Collapse">⌄</button>
+    </div>
+    <div class="lb-sub" id="lb-sub">—</div>
+    <div class="lb-list" id="lb-list"></div>
+  </aside>
+
+  <!-- Spotlight beam overlay (renders on top of graph when spotlight mode active) -->
+  <div class="spotlight-overlay" id="spotlight-overlay" style="display:none;">
+    <div class="spotlight-inner">
+      <div class="spotlight-eyebrow">You are seen.</div>
+      <div class="spotlight-username" id="spotlight-username">—</div>
+      <div class="spotlight-stats" id="spotlight-stats">—</div>
+      <div class="spotlight-actions">
+        <button class="spotlight-btn" id="spotlight-share">Copy my universe link</button>
+        <button class="spotlight-btn spotlight-btn-ghost" id="spotlight-dismiss">Enter the graph</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<aside class="drawer" id="drawer">
+  <button class="drawer-close" id="drawer-close">✕</button>
+  <div class="drawer-inner" id="drawer-inner"></div>
+</aside>
+
+<div class="level-transition-overlay" id="level-transition-overlay"></div>
+
+<footer>
+<p style="padding:12px 24px;color:#a9bac7;font:13px system-ui">Independent extension by Felipe Mattos. Original prototype by Dapper Labs. Not an official Dapper release.</p>
+  <div class="footer-inner">
+    <div>NBA Top Shot · Built on Flow · In partnership with the NBA and WNBA</div>
+    <div style="display:flex; gap:22px;">
+      <a href="/methodology">How this works</a>
+      <a href="https://nbatopshot.com" target="_blank" rel="noopener">Top Shot</a>
+      <a href="https://flow.com" target="_blank" rel="noopener">Flow</a>
+      <a href="https://ipfs.tech" target="_blank" rel="noopener">IPFS</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+<!-- UnrealBloomPass stack (T1.01) — r147 UMD scripts, API-compatible with r149 runtime. Order matters. -->
+<script src="https://unpkg.com/three@0.147.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/MaskPass.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://unpkg.com/3d-force-graph@1.70.19/dist/3d-force-graph.min.js"></script>
+<script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="router.js"></script>
+<!-- Both classic+defer to guarantee document-order execution: data-layer.js runs first
+     and assigns window.DataLayer; fandom.js runs second and reads it. -->
+<script defer src="data-layer.js?v=20260628m7"></script>
+<script defer src="number-context.js"></script>
+<script defer src="fandom.js?v=20260628m8"></script>
+</body>
+</html>

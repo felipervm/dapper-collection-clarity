@@ -1,0 +1,18 @@
+
+[G3] Graph renders with correct node counts + disclosure
+  ✓ G3.a window.__fandomCoverage.S >= 200
+  ✓ G3.b window.__fandomCoverage.M === 9960
+  ✓ G3.c #graph-coverage contains "Showing top 200 of 9,960"
+  ✓ G3.d #graph canvas exists with non-zero dimensions
+
+[G5] Spotlight deep-link works
+  ✓ G5.a resolved first owner flowAddress
+  ✓ G5.b #spotlight-overlay is visible (display !== none)
+  ✓ G5.c #spotlight-username has non-empty text
+
+[G9] Performance gate (mobile throttle)
+  ✗ G9.a first-paint < 4000ms — got firstPaint=11048ms
+  ✓ G9.b long-task ratio < 0.5 of graph-build time (20888ms)
+
+--- Smoke summary: 8 passed, 1 failed ---
+  ✗ G9.a first-paint < 4000ms — got firstPaint=11048ms

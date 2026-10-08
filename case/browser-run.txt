@@ -1,0 +1,10 @@
+BROWSER: Failed to load resource: net::ERR_FAILED
+BROWSER: Failed to load resource: the server responded with a status of 503 (Service Unavailable)
+PASS graph unavailable · source, null/zero, ranking, coverage, disclosure
+BROWSER: Failed to load resource: net::ERR_FAILED
+PASS graph available · source, null/zero, ranking, coverage, disclosure
+BROWSER: Failed to load resource: net::ERR_FAILED
+PASS graph empty · source, null/zero, ranking, coverage, disclosure
+BROWSER: Failed to load resource: net::ERR_FAILED
+PASS graph malformed · source, null/zero, ranking, coverage, disclosure
+PASS case · 4 interactive states, recorded audit, desktop and mobile
